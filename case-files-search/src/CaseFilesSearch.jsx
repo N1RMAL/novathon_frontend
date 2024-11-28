@@ -1,264 +1,274 @@
-import React, { useState, useEffect } from 'react';
-import Papa from 'papaparse';
-import jsPDF from 'jspdf';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
+import React, { useState } from 'react';
 
+const CaseFilesSearch = () => {
+  const [searchParams, setSearchParams] = useState({
+    query: '',
+    year: '',
+    criminal_name: '',
+    police_station: '',
+    crime_type: '',
+    top_k: 5
+  });
 
-import * as pdfjsLib from 'pdfjs-dist/build/pdf'
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSearchParams(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-// Configure PDF.js worker
-//pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-//pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-function CaseFilesSearch() {
-  const [cases, setCases] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredCases, setFilteredCases] = useState([]);
-  const [viewPdfUrl, setViewPdfUrl] = useState(null);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  // Load CSV file when component mounts
-  useEffect(() => {
-    const loadCases = async () => {
-      const response = await fetch('/case_files_data.csv');
-      const reader = response.body.getReader();
-      const result = await reader.read();
-      const decoder = new TextDecoder('utf-8');
-      const csv = decoder.decode(result.value);
-      
-      Papa.parse(csv, {
-        header: true,
-        complete: (results) => {
-          setCases(results.data);
-        }
+    try {
+      const response = await fetch('http://127.0.0.1:8000/search_case_files/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...searchParams,
+          top_k: parseInt(searchParams.top_k) || 5
+        })
       });
-    };
 
-    loadCases();
-  }, []);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
-  // PDF Generation and View Functions
-  const generatePDFBlob = (caseFile) => {
-    const doc = new jsPDF();
-
-    // Set font styles
-    doc.setFont('helvetica');
-    doc.setFontSize(12);
-
-    // Add title
-    doc.setFontSize(16);
-    doc.text('Case File Details', 10, 10);
-    doc.setFontSize(12);
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js`
-
-    // Define the fields to include in PDF (excluding keywords)
-    const fieldsToInclude = [
-      'case_file_id', 
-      'year', 
-      'criminal_name', 
-      'police_station', 
-      'crime_type', 
-      'case_details'
-    ];
-
-    // Add case details to PDF
-    let yPosition = 30;
-    fieldsToInclude.forEach((field) => {
-      const formattedField = field
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      doc.text(`${formattedField}: ${caseFile[field]}`, 10, yPosition);
-      yPosition += 10;
-    });
-
-    // Convert PDF to Blob
-    return doc.output('blob');
-  };
-
-  const handleViewPDF = (caseFile) => {
-    const pdfBlob = generatePDFBlob(caseFile);
-    if (pdfBlob) {
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        setViewPdfUrl(pdfUrl);
-    } else {
-        console.error("Failed to generate PDF blob.");
-    }
-  };
-
-  const handleDownloadPDF = (caseFile) => {
-    const doc = new jsPDF();
-
-    // Reuse the PDF generation logic
-    const fieldsToInclude = [
-      'case_file_id', 
-      'year', 
-      'criminal_name', 
-      'police_station', 
-      'crime_type', 
-      'case_details'
-    ];
-
-    let yPosition = 30;
-    doc.setFont('helvetica');
-    doc.setFontSize(16);
-    doc.text('Case File Details', 10, 10);
-    doc.setFontSize(12);
-
-    fieldsToInclude.forEach((field) => {
-      const formattedField = field
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      doc.text(`${formattedField}: ${caseFile[field]}`, 10, yPosition);
-      yPosition += 10;
-    });
-
-    doc.save(`Case_${caseFile.case_file_id}_Details.pdf`);
-  };
-
-  // Search function
-  const handleSearch = (e) => {
-    const term = e.target.value.toLowerCase();
-    setSearchTerm(term);
-
-    const filtered = cases.filter(caseFile => 
-      Object.values(caseFile).some(value => 
-        value.toString().toLowerCase().includes(term)
-      )
-    );
-
-    setFilteredCases(filtered);
-  };
-
-  // Close PDF Viewer
-  const handleClosePDF = () => {
-    if (viewPdfUrl) {
-      URL.revokeObjectURL(viewPdfUrl);
-      setViewPdfUrl(null);
+      const data = await response.json();
+      setResults(data.results);
+    } catch (err) {
+      setError('Failed to fetch case files. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <input 
-        type="text"
-        placeholder="Search case files..."
-        value={searchTerm}
-        onChange={handleSearch}
-        style={{ width: '100%', padding: '10px', marginBottom: '20px' }}
-      />
-
-      <div>
-        {filteredCases.length > 0 ? (
-          filteredCases.map((caseFile, index) => (
-            <div 
-              key={index} 
-              style={{ 
-                border: '1px solid #ddd', 
-                padding: '10px', 
-                marginBottom: '10px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div>
-                <strong>Case ID:</strong> {caseFile.case_file_id}<br/>
-                <strong>Year:</strong> {caseFile.year}<br/>
-                <strong>Criminal Name:</strong> {caseFile.criminal_name}<br/>
-                <strong>Crime Type:</strong> {caseFile.crime_type}
-              </div>
-              <div>
-                <button 
-                  onClick={() => handleViewPDF(caseFile)}
-                  style={{ 
-                    padding: '10px', 
-                    backgroundColor: '#2196F3', 
-                    color: 'white', 
-                    border: 'none',
-                    marginRight: '10px'
-                  }}
-                >
-                  View PDF
-                </button>
-                <button 
-                  onClick={() => handleDownloadPDF(caseFile)}
-                  style={{ 
-                    padding: '10px', 
-                    backgroundColor: '#4CAF50', 
-                    color: 'white', 
-                    border: 'none' 
-                  }}
-                >
-                  Download PDF
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p>No cases found</p>
-        )}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r shadow-md hidden md:block">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            Case Management
+          </h2>
+        </div>
+        <nav className="p-4">
+          <ul className="space-y-2">
+            <li className="bg-blue-50 text-blue-600 rounded-lg">
+              <a href="#" className="block p-3 flex items-center justify-between">
+                Search Cases 
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </a>
+            </li>
+            <li className="hover:bg-gray-100 rounded-lg">
+              <a href="#" className="block p-3 text-gray-600">
+                Legal Advisor
+              </a>
+            </li>
+          </ul>
+        </nav>
       </div>
 
-      {/* PDF Viewer Modal */}
-      {viewPdfUrl && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}
-        >
-          <div 
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '10px',
-              width: '80%',
-              height: '80%',
-              position: 'relative'
-            }}
-          >
-            <button 
-              onClick={handleClosePDF}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                backgroundColor: 'red',
-                color: 'white',
-                border: 'none',
-                padding: '10px',
-                borderRadius: '5px'
-              }}
-            >
-              Close
-            </button>
-            <Document
-              file={viewPdfUrl}
-              options={{ workerSrc: "/pdf.worker.js" }}
-            >
-              <Page 
-                pageNumber={1} 
-                width={window.innerWidth * 0.7}
-              />
-            </Document>
+      {/* Main Content */}
+      <div className="flex-1 p-6 md:p-10 overflow-y-auto">
+        {/* Header */}
+        <header className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Case Search</h1>
+            <p className="text-gray-500 mt-2">Search and analyze case files</p>
           </div>
+        </header>
+
+        {/* Search Form */}
+        <div className="bg-white shadow-md rounded-lg border">
+          <form onSubmit={handleSearch} className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  name="query"
+                  value={searchParams.query}
+                  onChange={handleInputChange}
+                  placeholder="Search case details, ID, or keywords"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <button 
+                type="submit" 
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center"
+                disabled={loading}
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+
+            {/* Advanced Search Toggle */}
+            <div className="flex items-center mb-4">
+              <button 
+                type="button"
+                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                className="text-blue-600 flex items-center hover:underline"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+                </svg>
+                {showAdvancedSearch ? 'Hide Advanced Search' : 'Advanced Search'}
+              </button>
+            </div>
+
+            {/* Advanced Search Fields */}
+            {showAdvancedSearch && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="text"
+                  name="year"
+                  value={searchParams.year}
+                  onChange={handleInputChange}
+                  placeholder="Year"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <input
+                  type="text"
+                  name="criminal_name"
+                  value={searchParams.criminal_name}
+                  onChange={handleInputChange}
+                  placeholder="Criminal Name"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <input
+                  type="text"
+                  name="police_station"
+                  value={searchParams.police_station}
+                  onChange={handleInputChange}
+                  placeholder="Police Station"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <input
+                  type="text"
+                  name="crime_type"
+                  value={searchParams.crime_type}
+                  onChange={handleInputChange}
+                  placeholder="Crime Type"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <select
+                  name="top_k"
+                  value={searchParams.top_k}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  {[5, 10, 15, 20].map(num => (
+                    <option key={num} value={num}>Top {num} Results</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </form>
         </div>
-      )}
+
+        {/* Error Handling */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* Search Results */}
+        {results.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Search Results</h2>
+            <div className="space-y-4">
+              {results.map(caseFile => (
+                <div 
+                  key={caseFile.case_file_id} 
+                  className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-blue-600">
+                        Case ID: {caseFile.case_file_id}
+                      </h3>
+                      <span className="text-sm text-gray-500 mt-1 block">
+                        Year: {caseFile.year}
+                      </span>
+                    </div>
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                      {caseFile.crime_type}
+                    </span>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-gray-700">
+                        <strong className="text-gray-900">Criminal Name:</strong> {caseFile.criminal_name}
+                      </p>
+                      <p className="text-gray-700">
+                        <strong className="text-gray-900">Police Station:</strong> {caseFile.police_station}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 border rounded p-4">
+                    <p className="text-gray-700">
+                      <strong className="text-gray-900">Case Details:</strong> {caseFile.case_details}
+                    </p>
+                  </div>
+                  <div className="mt-4">
+  <a 
+    href={`http://localhost:5173/${caseFile.file_path}`} 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="group flex items-center px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-6 w-6 mr-3 text-blue-600 group-hover:text-blue-700 transition-colors" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
+      />
+    </svg>
+    <span className="text-blue-600 group-hover:text-blue-800 font-semibold transition-colors">
+      View Case File
+    </span>
+  </a>
+</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default CaseFilesSearch;
