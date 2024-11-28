@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SummaryDialogue from './CaseSummaryModal';
 
 const CaseFilesSearch = () => {
   const [searchParams, setSearchParams] = useState({
@@ -14,6 +15,58 @@ const CaseFilesSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+
+  const [summaryDialogue, setSummaryDialogue] = useState({
+    isOpen: false,
+    caseId: null,
+    summary: null
+  });
+
+  const handleSummarize = async (caseId) => {
+    // Open dialogue immediately with loading state
+    setSummaryDialogue({
+      isOpen: true,
+      caseId: caseId,
+      summary: null
+    });
+
+    try {
+      // Simulate API call for summary 
+      const response = await fetch(`http://127.0.0.1:8000/get-file-text/${caseId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch summary');
+      }
+
+      const data = await response.json();
+      console.log(data);
+      // Update dialogue with summary
+      setSummaryDialogue(prev => ({
+        ...prev,
+        summary: data.extracted_text.llm_response
+      }));
+    } catch (err) {
+      console.error('Summary fetch error:', err);
+      setSummaryDialogue(prev => ({
+        ...prev,
+        summary: 'Failed to generate summary. Please try again.'
+      }));
+    }
+  };
+
+  const handleCloseSummaryDialogue = () => {
+    setSummaryDialogue({
+      isOpen: false,
+      caseId: null,
+      summary: null
+    });
+  };
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -235,7 +288,7 @@ const CaseFilesSearch = () => {
                       <strong className="text-gray-900">Case Details:</strong> {caseFile.case_details}
                     </p>
                   </div>
-                  <div className="mt-4">
+                  <div className="mt-4 flex space-x-4">
   <a 
     href={`http://localhost:5173/${caseFile.file_path}`} 
     target="_blank" 
@@ -260,6 +313,29 @@ const CaseFilesSearch = () => {
       View Case File
     </span>
   </a>
+  
+  <button 
+    onClick={() => handleSummarize(caseFile.case_file_id)}
+    className="group flex items-center px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-6 w-6 mr-3 text-green-600 group-hover:text-green-700 transition-colors" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+      />
+    </svg>
+    <span className="text-green-600 group-hover:text-green-800 font-semibold transition-colors">
+      Summarize
+    </span>
+  </button>
 </div>
                 </div>
               ))}
@@ -267,6 +343,12 @@ const CaseFilesSearch = () => {
           </div>
         )}
       </div>
+      <SummaryDialogue 
+        isOpen={summaryDialogue.isOpen}
+        onClose={handleCloseSummaryDialogue}
+        caseId={summaryDialogue.caseId}
+        summary={summaryDialogue.summary}
+      />
     </div>
   );
 };
