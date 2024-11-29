@@ -23,10 +23,15 @@ const CaseFilesSearch = () => {
     summary: null
   });
 
+  const caseFile = {
+    file_path: 'case-files-search/renamed_case_files/14_2022_Heather_Navarro_Domestic Violence.pdf',
+    // other data related to the case
+  };
+
 
   // Function to handle click and set case_id
   const handleClick = () => {
-    const caseId = caseFile.file_path.split('_')[0]; // Extract case_id from the file path (assuming it's the first part of the filename)
+    const caseId = caseFille.file_path.split('_')[0]; // Extract case_id from the file path (assuming it's the first part of the filename)
     setCaseId(caseId);
   };
 
