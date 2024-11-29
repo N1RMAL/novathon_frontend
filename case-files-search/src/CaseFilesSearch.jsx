@@ -34,6 +34,7 @@ const CaseFilesSearch = () => {
   const handleClick = () => {
     const caseId = caseFille.file_path.split('_')[0]; // Extract case_id from the file path (assuming it's the first part of the filename)
     setCaseId(caseId);
+    console.log(caseId);
   };
 
   const handleSummarize = async (caseId) => {
@@ -291,7 +292,7 @@ const CaseFilesSearch = () => {
           View Case File
         </span>
       </button>
-      {caseId && <DisplayPDF case_id={4} />}
+      {caseId && <DisplayPDF case_id={caseId} />}
                   <button 
                     onClick={() => handleSummarize(caseFile.case_file_id)}
                     className="group flex items-center px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"
