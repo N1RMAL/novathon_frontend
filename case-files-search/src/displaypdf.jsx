@@ -12,7 +12,7 @@ const DisplayPDF = ({ case_id }) => {
   useEffect(() => {
     // Example pattern to match the case_id with the PDF
     const pdfFilename = `${case_id}_2022_Heather_Navarro_Domestic Violence.pdf`; 
-    setPdfFile(`/path/to/pdfs/${pdfFilename}`);
+    setPdfFile(`case-files-search/renamed_case_files/${pdfFilename}`);
   }, [case_id]);
 
   if (!pdfFile) {
@@ -22,9 +22,9 @@ const DisplayPDF = ({ case_id }) => {
   return (
     <div>
       <h3>Viewing PDF for Case ID: {case_id}</h3>
-      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`}>
-        <Viewer fileUrl={pdfFile} />
-      </Worker>
+      <Worker workerUrl={`https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`}>
+  <Viewer fileUrl={pdfFile} />
+</Worker>
     </div>
   );
 };
