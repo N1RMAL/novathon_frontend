@@ -22,7 +22,7 @@ const DisplayPDF = ({ case_id }) => {
   return (
     <div>
       <h3>Viewing PDF for Case ID: {case_id}</h3>
-      <Worker workerUrl={`https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`}>
+      <Worker workerUrl="/pdf.worker.min.js">
   <Viewer fileUrl={pdfFile} />
 </Worker>
     </div>
