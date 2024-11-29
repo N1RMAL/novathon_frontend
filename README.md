@@ -39,7 +39,7 @@ Ensure you have the following installed:
 ### **Steps**
 
 1. Clone the repository:
-   git clone <repository_url>](https://github.com/N1RMAL/novathon_frontend.git
+   git clone https://github.com/N1RMAL/novathon_frontend.git
 
 2. Navigate to the project directory:
    cd case-files-search
