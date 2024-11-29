@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowUpIcon, ShieldIcon, SparklesIcon, LoaderIcon } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { 
+  ArrowUpIcon, 
+  ShieldIcon, 
+  SparklesIcon, 
+  LoaderIcon 
+} from 'lucide-react';
 
 const LegalChatPage = () => {
   const [query, setQuery] = useState('');
@@ -10,14 +19,13 @@ const LegalChatPage = () => {
   const messagesEndRef = useRef(null);
   const controllerRef = useRef(null);
 
-  // Scroll to bottom when messages change
-//   const scrollToBottom = () => {
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   };
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-//   useEffect(() => {
-//     scrollToBottom();
-//   }, [messages, streamedResponse]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamedResponse]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,6 +114,149 @@ const LegalChatPage = () => {
     };
   }, []);
 
+  // Markdown rendering components
+  const MarkdownComponents = {
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={oneLight}
+          language={match[1]}
+          PreTag="div"
+          className="rounded-lg my-4"
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code 
+          className="
+            bg-gray-100 text-red-600 
+            px-1.5 py-0.5 rounded 
+            text-sm font-mono
+          " 
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    },
+    h1: ({node, ...props}) => (
+      <h1 
+        className="
+          text-2xl font-bold 
+          text-slate-900 
+          mb-4 
+          border-b pb-2
+        " 
+        {...props} 
+      />
+    ),
+    h2: ({node, ...props}) => (
+      <h2 
+        className="
+          text-xl font-semibold 
+          text-slate-800 
+          mb-3 
+          mt-4
+        " 
+        {...props} 
+      />
+    ),
+    a: ({node, ...props}) => (
+      <a 
+        className="
+          text-blue-600 
+          hover:text-blue-800 
+          underline
+        " 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        {...props} 
+      />
+    ),
+    p: ({node, ...props}) => (
+      <p 
+        className="
+          text-slate-700 
+          mb-4 
+          leading-relaxed
+        " 
+        {...props} 
+      />
+    ),
+    ul: ({node, ...props}) => (
+      <ul 
+        className="
+          list-disc 
+          pl-5 
+          mb-4 
+          text-slate-700
+        " 
+        {...props} 
+      />
+    ),
+    ol: ({node, ...props}) => (
+      <ol 
+        className="
+          list-decimal 
+          pl-5 
+          mb-4 
+          text-slate-700
+        " 
+        {...props} 
+      />
+    ),
+    blockquote: ({node, ...props}) => (
+      <blockquote 
+        className="
+          border-l-4 border-blue-500 
+          pl-4 py-2 my-4 
+          bg-blue-50/50 
+          italic 
+          text-slate-700
+        " 
+        {...props} 
+      />
+    ),
+    table: ({node, ...props}) => (
+      <div className="overflow-x-auto mb-4">
+        <table 
+          className="
+            w-full 
+            border-collapse 
+            border 
+            border-slate-200
+          " 
+          {...props} 
+        />
+      </div>
+    ),
+    th: ({node, ...props}) => (
+      <th 
+        className="
+          bg-slate-100 
+          border border-slate-200 
+          px-4 py-2 
+          text-left 
+          font-semibold 
+          text-slate-700
+        " 
+        {...props} 
+      />
+    ),
+    td: ({node, ...props}) => (
+      <td 
+        className="
+          border border-slate-200 
+          px-4 py-2 
+          text-slate-800
+        " 
+        {...props} 
+      />
+    )
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-3xl bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
@@ -114,8 +265,7 @@ const LegalChatPage = () => {
           <div className="flex items-center space-x-4">
             <ShieldIcon className="w-10 h-10 text-white" strokeWidth={2} />
             <div>
-              <h1 className="text-2xl font-bold">Legal Advisor AI</h1>
-
+              <h1 className="text-2xl font-bold text-white">Legallytic AI</h1>
             </div>
           </div>
           <SparklesIcon className="w-8 h-8 text-yellow-300" />
@@ -127,7 +277,7 @@ const LegalChatPage = () => {
           {messages.length === 0 && (
             <div className="flex justify-start mb-4">
               <div className="max-w-[80%] bg-white p-5 rounded-2xl shadow-md text-slate-700 border border-slate-100">
-                <p className="font-medium">Welcome to Legal Advisor AI</p>
+                <p className="font-medium">Welcome to Legallytic</p>
                 <p className="text-sm text-slate-500 mt-2">
                   I'm here to help you with legal queries related to the Indian Penal Code. 
                   Ask me anything, and I'll provide clear, concise legal insights.
@@ -148,16 +298,26 @@ const LegalChatPage = () => {
                     ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' 
                     : 'bg-white text-slate-800 border border-slate-100'}
                   transition-all duration-300 ease-in-out
+                  prose prose-sm
                 `}
               >
                 {msg.type === 'bot' && isLoading && index === messages.length - 1 
-                  ? streamedResponse || (
+                  ? (streamedResponse || (
                     <div className="flex items-center space-x-2">
                       <LoaderIcon className="w-5 h-5 animate-spin" />
                       <span>Analyzing your query...</span>
                     </div>
-                  )
-                  : msg.text}
+                  ))
+                  : msg.type === 'bot' ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={MarkdownComponents}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  ) : (
+                    msg.text
+                  )}
               </div>
             </div>
           ))}

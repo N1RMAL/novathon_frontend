@@ -15,12 +15,20 @@ const CaseFilesSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [caseId, setCaseId] = useState(null);
 
   const [summaryDialogue, setSummaryDialogue] = useState({
     isOpen: false,
     caseId: null,
     summary: null
   });
+
+
+  // Function to handle click and set case_id
+  const handleClick = () => {
+    const caseId = caseFile.file_path.split('_')[0]; // Extract case_id from the file path (assuming it's the first part of the filename)
+    setCaseId(caseId);
+  };
 
   const handleSummarize = async (caseId) => {
     setSummaryDialogue({
@@ -45,6 +53,7 @@ const CaseFilesSearch = () => {
       console.log(data);
       setSummaryDialogue(prev => ({
         ...prev,
+        // summary: data.extracted_text.llm_response
         summary: data.extracted_text.llm_response
       }));
     } catch (err) {
@@ -108,7 +117,7 @@ const CaseFilesSearch = () => {
       {/* Header */}
       <header className="mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Case Search</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Search Cases</h1>
           <p className="text-gray-500 mt-2">Search and analyze case files</p>
         </div>
       </header>
@@ -254,31 +263,29 @@ const CaseFilesSearch = () => {
                   </p>
                 </div>
                 <div className="mt-4 flex space-x-4">
-                  <a 
-                    href={`http://localhost:5173/${caseFile.file_path}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="group flex items-center px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"
-                  >
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="h-6 w-6 mr-3 text-blue-600 group-hover:text-blue-700 transition-colors" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
-                      />
-                    </svg>
-                    <span className="text-blue-600 group-hover:text-blue-800 font-semibold transition-colors">
-                      View Case File
-                    </span>
-                  </a>
-                  
+                <button
+        onClick={handleClick}
+        className="group flex items-center px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 mr-3 text-blue-600 group-hover:text-blue-700 transition-colors"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+        <span className="text-blue-600 group-hover:text-blue-800 font-semibold transition-colors">
+          View Case File
+        </span>
+      </button>
+      {caseId && <DisplayPDF case_id={4} />}
                   <button 
                     onClick={() => handleSummarize(caseFile.case_file_id)}
                     className="group flex items-center px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md max-w-fit"

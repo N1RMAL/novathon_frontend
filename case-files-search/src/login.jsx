@@ -30,7 +30,7 @@ const Login = () => {
   };
 
   return isLoggedIn ? (
-    <Navigate to="/case-search" replace />
+    <Navigate to="/dashboard" replace />
   ) : (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -51,7 +51,7 @@ const Login = () => {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              Case Management Login
+              Login
             </h2>
           </div>
 
