@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import SummaryDialogue from './CaseSummaryModal';
+import DisplayPDF from './displaypdf';
 
 const CaseFilesSearch = () => {
   const [searchParams, setSearchParams] = useState({
