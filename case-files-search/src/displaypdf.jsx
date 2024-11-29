@@ -7,7 +7,7 @@ const DisplayPDF = ({ case_id }) => {
   useEffect(() => {
     try {
       // Example pattern to match the case_id with the PDF
-      const pdfFilename = `${case_id}_2022_Heather_Navarro_Domestic Violence.pdf`; 
+      const pdfFilename = `${14}_2022_Heather_Navarro_Domestic Violence.pdf`; 
       console.log(pdfFilename);
       const fullPath = `case-files-search/renamed_case_files/${pdfFilename}`;
       
