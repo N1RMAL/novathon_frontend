@@ -53,7 +53,7 @@ const LegalChatPage = () => {
     try {
       // Make streaming API call
       const response = await axios.post(
-        'http://localhost:8000/legal-analysis-stream/', 
+        'http://localhost:8000/legal-analysis/', 
         { query }, 
         {
           signal: controllerRef.current.signal,
