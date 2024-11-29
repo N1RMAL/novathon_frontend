@@ -25,7 +25,7 @@ const CaseFilesSearch = () => {
   });
 
   const caseFille = {
-    file_path: 'case-files-search/renamed_case_files/14_2022_Heather_Navarro_Domestic Violence.pdf',
+    file_path: 'case-files-search/renamedcasefiles/4_2020_Elizabeth_Gonzalez_Cybercrime.pdf',
     // other data related to the case
   };
 
@@ -40,7 +40,7 @@ const CaseFilesSearch = () => {
   const handleSummarize = async (caseId) => {
     setSummaryDialogue({
       isOpen: true,
-      caseId: caseId,
+      caseId: 4,
       summary: null
     });
 

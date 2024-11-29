@@ -7,9 +7,10 @@ const DisplayPDF = ({ case_id }) => {
   useEffect(() => {
     try {
       // Example pattern to match the case_id with the PDF
-      const pdfFilename = `${14}_2022_Heather_Navarro_Domestic Violence.pdf`; 
+      const pdfFilename = `${4}_2022_Heather_Navarro_Domestic Violence.pdf`; 
       console.log(pdfFilename);
       const fullPath = `case-files-search/renamed_case_files/${pdfFilename}`;
+    //   const fullPath = "D:/projects/hack_frontend/novathon_frontend/case-files-search/renamed_case_files/4_2020_Elizabeth_Gonzalez_Cybercrime.pdf"
       
       // Set the download link
       setDownloadLink(fullPath);

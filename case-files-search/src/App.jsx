@@ -16,6 +16,7 @@ const App = () => (
       <Route path="/chat" element={<LegalChatPage />} />
       <Route path="/dashboard" element={<LegalAdvisoryDashboard />} />
       <Route path="/register" element={<RegistrationPage />} />
+
     </Routes>
   </Router>
 );
