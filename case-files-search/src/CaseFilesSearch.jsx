@@ -23,7 +23,7 @@ const CaseFilesSearch = () => {
     summary: null
   });
 
-  const caseFile = {
+  const caseFille = {
     file_path: 'case-files-search/renamed_case_files/14_2022_Heather_Navarro_Domestic Violence.pdf',
     // other data related to the case
   };
