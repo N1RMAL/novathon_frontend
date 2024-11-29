@@ -51,68 +51,39 @@ const LegalChatPage = () => {
     controllerRef.current = new AbortController();
 
     try {
-      // Make streaming API call
+      // Make API call to get legal analysis
       const response = await axios.post(
         'http://localhost:8000/legal-analysis/', 
         { query }, 
         {
-          signal: controllerRef.current.signal,
-          responseType: 'stream'
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       );
 
-      // Handle streaming response
-      const reader = response.data.getReader();
-      const decoder = new TextDecoder();
-
-      const readStream = async () => {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          // Finalize streaming response
-          setMessages(prev => [
-            ...prev.slice(0, -1), 
-            { type: 'bot', text: streamedResponse }
-          ]);
-          setStreamedResponse('');
-          setIsLoading(false);
-          return;
-        }
-
-        const chunk = decoder.decode(value, { stream: true });
-        setStreamedResponse(prev => prev + chunk);
-        
-        // Continue reading
-        readStream();
+      // Extract the LLM response from the API
+      const botMessage = { 
+        type: 'bot', 
+        text: response.data.legal_analysis.llm_response 
       };
 
-      // Add initial bot message placeholder
-      setMessages(prev => [...prev, { type: 'bot', text: '' }]);
+      // Add bot message to messages
+      setMessages(prev => [...prev, botMessage]);
       
-      // Start streaming
-      readStream();
+      // Reset loading state
+      setIsLoading(false);
 
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error fetching legal analysis:', error);
-        const errorMessage = { 
-          type: 'bot', 
-          text: 'Sorry, there was an error processing your request.' 
-        };
-        setMessages(prev => [...prev, errorMessage]);
-      }
+      console.error('Error fetching legal analysis:', error);
+      const errorMessage = { 
+        type: 'bot', 
+        text: 'Sorry, there was an error processing your request.' 
+      };
+      setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
     }
   };
-
-  // Cancel ongoing stream if component unmounts
-  useEffect(() => {
-    return () => {
-      if (controllerRef.current) {
-        controllerRef.current.abort();
-      }
-    };
-  }, []);
 
   // Markdown rendering components
   const MarkdownComponents = {
@@ -301,23 +272,23 @@ const LegalChatPage = () => {
                   prose prose-sm
                 `}
               >
-                {msg.type === 'bot' && isLoading && index === messages.length - 1 
-                  ? (streamedResponse || (
-                    <div className="flex items-center space-x-2">
-                      <LoaderIcon className="w-5 h-5 animate-spin" />
-                      <span>Analyzing your query...</span>
-                    </div>
-                  ))
-                  : msg.type === 'bot' ? (
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={MarkdownComponents}
-                    >
-                      {msg.text}
-                    </ReactMarkdown>
-                  ) : (
-                    msg.text
-                  )}
+                {isLoading && msg.type === 'bot' && (
+                  <div className="flex items-center space-x-2">
+                    <LoaderIcon className="w-5 h-5 animate-spin" />
+                    <span>Analyzing your query...</span>
+                  </div>
+                )}
+                
+                {msg.type === 'bot' && !isLoading ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={MarkdownComponents}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                ) : (
+                  msg.text
+                )}
               </div>
             </div>
           ))}
